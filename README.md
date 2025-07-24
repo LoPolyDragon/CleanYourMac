@@ -16,7 +16,7 @@ A powerful, interactive macOS system cleanup utility that helps you safely clean
 - 🎨 **Beautiful Interactive Interface** - Colorful terminal interface that's intuitive and user-friendly
 - 🛡️ **Safe & Reliable** - Always asks for confirmation before deleting anything
 - 📊 **Real-time Size Display** - Shows disk usage for each cleanup category
-- 🎯 **Modular Cleaning** - Selectively clean different types of files
+- 🎯 **Multi-Selection Support** - Select multiple cleanup categories at once with checkbox-style interface
 - 📈 **Detailed Summary** - Shows cleanup results and space saved
 - ⚡ **Smart Detection** - Automatically detects installed applications and dev tools
 
@@ -96,19 +96,28 @@ The script supports both English and Chinese interfaces:
 # Interactive language switching available in menu option [8]
 ```
 
-### Interactive Menu
+### Interactive Menu with Multi-Selection
 
-After running the script, you'll see the following menu options:
+After running the script, you'll see the following menu options with checkbox-style selection:
 
 ```
-[1] User-level caches & logs
-[2] System-level caches (requires admin)
-[3] Browser caches
-[4] Development tools
-[5] Application caches
-[6] Trash & miscellaneous
-[7] Clean everything (interactive)
-[8] Exit
+Select cleanup categories (Multi-selection supported):
+
+[1] ☐ User-level caches & logs
+[2] ☐ System-level caches (requires admin)
+[3] ☐ Browser caches
+[4] ☐ Development tools
+[5] ☐ Application caches
+[6] ☐ Trash & miscellaneous
+[7] Select all
+[8] Start cleaning
+[9] Language / Exit
+
+Tip: Enter numbers to toggle selection, 8=Start cleaning, 9=Language/Exit
+
+Current Selection:
+  ☑️ User-level caches & logs
+  ☑️ Browser caches
 ```
 
 ### Example Usage
@@ -117,7 +126,12 @@ After running the script, you'll see the following menu options:
 # Quick start
 ./clean_mac.sh
 
-# For each cleanup item, you'll see prompts like:
+# Multi-selection workflow:
+# 1. Select multiple categories by entering their numbers (1, 3, 5)
+# 2. Use option 7 to select all categories at once
+# 3. Press 8 to start cleaning selected items
+# 4. For each cleanup item, you'll see prompts like:
+
 User application caches
   → Path: /Users/username/Library/Caches
   → Size: 2.3GB

@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # CleanMac - Advanced macOS System Cleanup Tool
-# Version: 2.1
+# Version: 2.2
 # Author: CleanYourMac Project (Created by a middle school student)
-# Description: Interactive macOS cleanup utility with multi-language support
+# Description: Interactive macOS cleanup utility with multi-language and multi-selection support
 
 set -eo pipefail
 
@@ -41,12 +41,17 @@ readonly COMPUTER_ICON="💻"
 readonly BROWSER_ICON="🌐"
 readonly DEV_ICON="👨‍💻"
 readonly LANG_ICON="🌐"
+readonly SELECT_ICON="☑️"
+readonly UNSELECT_ICON="☐"
 
 # Global variables
 total_cleaned=0
 total_items=0
 cleaned_paths=()
 skipped_paths=()
+
+# Multi-selection variables
+declare -a selected_options=()
 
 # Function to get localized text
 get_text() {
@@ -57,19 +62,24 @@ get_text() {
             "subtitle") echo "交互式清理实用工具" ;;
             "description") echo "此工具帮助您安全地清理 macOS 系统中的缓存和垃圾文件。" ;;
             "begin") echo "删除任何文件前都会询问您的确认。让我们开始吧。" ;;
-            "menu_select") echo "选择清理类别：" ;;
+            "menu_select") echo "选择清理类别（支持多选）：" ;;
             "menu_1") echo "用户级缓存和日志" ;;
             "menu_2") echo "系统级缓存" ;;
             "menu_3") echo "浏览器缓存" ;;
             "menu_4") echo "开发工具" ;;
             "menu_5") echo "应用程序缓存" ;;
             "menu_6") echo "垃圾箱和其他" ;;
-            "menu_7") echo "清理所有项目" ;;
-            "menu_8") echo "语言 / 退出" ;;
+            "menu_7") echo "全选" ;;
+            "menu_8") echo "开始清理" ;;
+            "menu_9") echo "语言 / 退出" ;;
             "requires_admin") echo "(需要管理员权限)" ;;
             "interactive") echo "(交互式)" ;;
-            "enter_choice") echo "请输入您的选择 [1-8]: " ;;
-            "invalid_choice") echo "无效选择。请选择 1-8。" ;;
+            "enter_choice") echo "请输入选项编号来切换选择 [1-9], 或按 Enter 查看选项: " ;;
+            "enter_number") echo "输入数字 [1-9]: " ;;
+            "invalid_choice") echo "无效选择。请选择 1-9。" ;;
+            "no_selection") echo "请至少选择一个清理类别。" ;;
+            "selected_items") echo "已选择的清理项目：" ;;
+            "confirm_start") echo "确认开始清理以上选中的项目？[y/N]: " ;;
             "thank_you") echo "感谢您使用 CleanMac！再见！" ;;
             "press_enter") echo "按回车键继续或 Ctrl+C 退出..." ;;
             "cleaning") echo "正在清理..." ;;
@@ -105,6 +115,8 @@ get_text() {
             "exit_program") echo "退出程序" ;;
             "lang_changed") echo "语言切换成功！" ;;
             "lang_saved") echo "语言偏好已保存。" ;;
+            "toggle_hint") echo "提示：输入数字来切换选择，8=开始清理，9=语言/退出" ;;
+            "current_selection") echo "当前选择" ;;
             *) echo "$key" ;;
         esac
     else
@@ -113,19 +125,24 @@ get_text() {
             "subtitle") echo "Interactive Cleanup Utility" ;;
             "description") echo "This tool helps you safely clean cache and junk files from your macOS system." ;;
             "begin") echo "You will be asked before anything is deleted. Let's begin." ;;
-            "menu_select") echo "Select cleanup categories:" ;;
+            "menu_select") echo "Select cleanup categories (Multi-selection supported):" ;;
             "menu_1") echo "User-level caches & logs" ;;
             "menu_2") echo "System-level caches" ;;
             "menu_3") echo "Browser caches" ;;
             "menu_4") echo "Development tools" ;;
             "menu_5") echo "Application caches" ;;
             "menu_6") echo "Trash & miscellaneous" ;;
-            "menu_7") echo "Clean everything" ;;
-            "menu_8") echo "Language / Exit" ;;
+            "menu_7") echo "Select all" ;;
+            "menu_8") echo "Start cleaning" ;;
+            "menu_9") echo "Language / Exit" ;;
             "requires_admin") echo "(requires admin)" ;;
             "interactive") echo "(interactive)" ;;
-            "enter_choice") echo "Enter your choice [1-8]: " ;;
-            "invalid_choice") echo "Invalid choice. Please select 1-8." ;;
+            "enter_choice") echo "Enter option number to toggle selection [1-9], or press Enter to see options: " ;;
+            "enter_number") echo "Enter number [1-9]: " ;;
+            "invalid_choice") echo "Invalid choice. Please select 1-9." ;;
+            "no_selection") echo "Please select at least one cleanup category." ;;
+            "selected_items") echo "Selected cleanup items:" ;;
+            "confirm_start") echo "Confirm to start cleaning the selected items? [y/N]: " ;;
             "thank_you") echo "Thank you for using CleanMac! Goodbye!" ;;
             "press_enter") echo "Press Enter to continue or Ctrl+C to exit..." ;;
             "cleaning") echo "Cleaning..." ;;
@@ -161,6 +178,8 @@ get_text() {
             "exit_program") echo "Exit Program" ;;
             "lang_changed") echo "Language changed successfully!" ;;
             "lang_saved") echo "Language preference saved." ;;
+            "toggle_hint") echo "Tip: Enter numbers to toggle selection, 8=Start cleaning, 9=Language/Exit" ;;
+            "current_selection") echo "Current Selection" ;;
             *) echo "$key" ;;
         esac
     fi
@@ -169,6 +188,55 @@ get_text() {
 # Save language preference
 save_language() {
     echo "$CURRENT_LANG" > "$LANG_FILE"
+}
+
+# Function to check if option is selected
+is_selected() {
+    local option="$1"
+    for selected in "${selected_options[@]}"; do
+        if [[ "$selected" == "$option" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Function to toggle selection
+toggle_selection() {
+    local option="$1"
+    local found=false
+    local new_array=()
+    
+    # Remove if already selected
+    for selected in "${selected_options[@]}"; do
+        if [[ "$selected" == "$option" ]]; then
+            found=true
+        else
+            new_array+=("$selected")
+        fi
+    done
+    
+    # Add if not found (was not selected)
+    if ! $found; then
+        new_array+=("$option")
+    fi
+    
+    selected_options=("${new_array[@]}")
+}
+
+# Function to select all options
+select_all() {
+    selected_options=(1 2 3 4 5 6)
+}
+
+# Function to get selection icon
+get_selection_icon() {
+    local option="$1"
+    if is_selected "$option"; then
+        echo "$SELECT_ICON"
+    else
+        echo "$UNSELECT_ICON"
+    fi
 }
 
 # Utility functions
@@ -493,6 +561,59 @@ show_language_menu() {
     esac
 }
 
+# Function to show current selection
+show_current_selection() {
+    if [[ ${#selected_options[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "${BOLD}${GREEN}$(get_text "current_selection"):${NC}"
+        for option in "${selected_options[@]}"; do
+            case $option in
+                1) echo -e "  ${SELECT_ICON} $(get_text "menu_1")" ;;
+                2) echo -e "  ${SELECT_ICON} $(get_text "menu_2") ${RED}$(get_text "requires_admin")${NC}" ;;
+                3) echo -e "  ${SELECT_ICON} $(get_text "menu_3")" ;;
+                4) echo -e "  ${SELECT_ICON} $(get_text "menu_4")" ;;
+                5) echo -e "  ${SELECT_ICON} $(get_text "menu_5")" ;;
+                6) echo -e "  ${SELECT_ICON} $(get_text "menu_6")" ;;
+            esac
+        done
+        echo ""
+    fi
+}
+
+# Function to execute selected cleanups
+execute_selected_cleanups() {
+    if [[ ${#selected_options[@]} -eq 0 ]]; then
+        print_error "$(get_text "no_selection")"
+        sleep 2
+        return
+    fi
+    
+    # Show selected items
+    show_current_selection
+    
+    # Confirm before starting
+    read -p "$(echo -e ${WHITE}$(get_text "confirm_start")${NC})" -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "$(get_text "skipped")"
+        sleep 2
+        return
+    fi
+    
+    # Execute selected cleanup functions
+    for option in "${selected_options[@]}"; do
+        case $option in
+            1) clean_user_caches ;;
+            2) clean_system_caches ;;
+            3) clean_browser_caches ;;
+            4) clean_dev_tools ;;
+            5) clean_app_caches ;;
+            6) clean_trash_and_misc ;;
+        esac
+    done
+}
+
 # Function to show final summary
 show_summary() {
     print_separator
@@ -527,15 +648,19 @@ show_summary() {
 show_menu() {
     echo -e "${BOLD}${WHITE}$(get_text "menu_select")${NC}"
     echo ""
-    echo -e "${CYAN}[1]${NC} $(get_text "menu_1")"
-    echo -e "${CYAN}[2]${NC} $(get_text "menu_2") ${RED}$(get_text "requires_admin")${NC}"
-    echo -e "${CYAN}[3]${NC} $(get_text "menu_3")"
-    echo -e "${CYAN}[4]${NC} $(get_text "menu_4")"
-    echo -e "${CYAN}[5]${NC} $(get_text "menu_5")"
-    echo -e "${CYAN}[6]${NC} $(get_text "menu_6")"
-    echo -e "${CYAN}[7]${NC} $(get_text "menu_7") ${RED}$(get_text "interactive")${NC}"
-    echo -e "${CYAN}[8]${NC} $(get_text "menu_8")"
+    echo -e "${CYAN}[1]${NC} $(get_selection_icon 1) $(get_text "menu_1")"
+    echo -e "${CYAN}[2]${NC} $(get_selection_icon 2) $(get_text "menu_2") ${RED}$(get_text "requires_admin")${NC}"
+    echo -e "${CYAN}[3]${NC} $(get_selection_icon 3) $(get_text "menu_3")"
+    echo -e "${CYAN}[4]${NC} $(get_selection_icon 4) $(get_text "menu_4")"
+    echo -e "${CYAN}[5]${NC} $(get_selection_icon 5) $(get_text "menu_5")"
+    echo -e "${CYAN}[6]${NC} $(get_selection_icon 6) $(get_text "menu_6")"
+    echo -e "${CYAN}[7]${NC} ${YELLOW}$(get_text "menu_7")${NC}"
+    echo -e "${CYAN}[8]${NC} ${GREEN}$(get_text "menu_8")${NC}"
+    echo -e "${CYAN}[9]${NC} $(get_text "menu_9")"
     echo ""
+    echo -e "${YELLOW}$(get_text "toggle_hint")${NC}"
+    
+    show_current_selection
 }
 
 # Main execution
@@ -569,38 +694,38 @@ main() {
     while true; do
         print_header
         show_menu
-        read -p "$(echo -e ${WHITE}$(get_text "enter_choice")${NC})" choice
+        read -p "$(echo -e ${WHITE}$(get_text "enter_number")${NC})" choice
         echo ""
         
         case $choice in
-            1) clean_user_caches ;;
-            2) clean_system_caches ;;
-            3) clean_browser_caches ;;
-            4) clean_dev_tools ;;
-            5) clean_app_caches ;;
-            6) clean_trash_and_misc ;;
-            7) 
-                clean_user_caches
-                clean_system_caches
-                clean_browser_caches
-                clean_dev_tools
-                clean_app_caches
-                clean_trash_and_misc
+            1|2|3|4|5|6)
+                toggle_selection "$choice"
                 ;;
-            8) 
+            7)
+                select_all
+                ;;
+            8)
+                execute_selected_cleanups
+                if [[ ${#selected_options[@]} -gt 0 ]]; then
+                    show_summary
+                    echo ""
+                    read -p "$(echo -e ${WHITE}$(get_text "press_enter")${NC})"
+                    # Reset selections after cleanup
+                    selected_options=()
+                    total_cleaned=0
+                    total_items=0
+                    cleaned_paths=()
+                    skipped_paths=()
+                fi
+                ;;
+            9)
                 show_language_menu
-                continue
                 ;;
-            *) 
+            *)
                 print_error "$(get_text "invalid_choice")"
                 sleep 2
-                continue
                 ;;
         esac
-        
-        show_summary
-        echo ""
-        read -p "$(echo -e ${WHITE}$(get_text "press_enter")${NC})"
     done
 }
 
