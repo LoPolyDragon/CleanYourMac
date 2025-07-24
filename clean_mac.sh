@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # CleanMac - Advanced macOS System Cleanup Tool
-# Version: 2.2
+# Version: 2.4
 # Author: CleanYourMac Project (Created by a middle school student)
-# Description: Interactive macOS cleanup utility with multi-language and multi-selection support
+# Description: Interactive macOS cleanup utility with comprehensive cleaning
 
 set -eo pipefail
 
@@ -41,17 +41,12 @@ readonly COMPUTER_ICON="💻"
 readonly BROWSER_ICON="🌐"
 readonly DEV_ICON="👨‍💻"
 readonly LANG_ICON="🌐"
-readonly SELECT_ICON="☑️"
-readonly UNSELECT_ICON="☐"
 
 # Global variables
 total_cleaned=0
 total_items=0
 cleaned_paths=()
 skipped_paths=()
-
-# Multi-selection variables
-declare -a selected_options=()
 
 # Function to get localized text
 get_text() {
@@ -62,26 +57,22 @@ get_text() {
             "subtitle") echo "交互式清理实用工具" ;;
             "description") echo "此工具帮助您安全地清理 macOS 系统中的缓存和垃圾文件。" ;;
             "begin") echo "删除任何文件前都会询问您的确认。让我们开始吧。" ;;
-            "menu_select") echo "选择清理类别（支持多选）：" ;;
-            "menu_1") echo "用户级缓存和日志" ;;
-            "menu_2") echo "系统级缓存" ;;
-            "menu_3") echo "浏览器缓存" ;;
-            "menu_4") echo "开发工具" ;;
-            "menu_5") echo "应用程序缓存" ;;
-            "menu_6") echo "垃圾箱和其他" ;;
-            "menu_7") echo "全选" ;;
-            "menu_8") echo "开始清理" ;;
-            "menu_9") echo "语言 / 退出" ;;
+            "menu_select") echo "选择清理类别：" ;;
+            "menu_1") echo "系统缓存和日志" ;;
+            "menu_2") echo "用户应用缓存" ;;
+            "menu_3") echo "浏览器数据" ;;
+            "menu_4") echo "开发工具缓存" ;;
+            "menu_5") echo "垃圾箱和下载" ;;
+            "menu_6") echo "系统临时文件" ;;
+            "menu_7") echo "全选 (清理所有项目)" ;;
+            "menu_8") echo "语言 / 退出" ;;
             "requires_admin") echo "(需要管理员权限)" ;;
-            "interactive") echo "(交互式)" ;;
-            "enter_choice") echo "请输入选项编号来切换选择 [1-9], 或按 Enter 查看选项: " ;;
-            "enter_number") echo "输入数字 [1-9]: " ;;
-            "invalid_choice") echo "无效选择。请选择 1-9。" ;;
-            "no_selection") echo "请至少选择一个清理类别。" ;;
-            "selected_items") echo "已选择的清理项目：" ;;
-            "confirm_start") echo "确认开始清理以上选中的项目？[y/N]: " ;;
+            "enter_choice") echo "输入数字（可多选，用空格分隔，如: 1 3 5）或 8 进入语言菜单: " ;;
+            "invalid_choice") echo "无效选择。请输入 1-8 的数字。" ;;
+            "selected_items") echo "将要清理的项目：" ;;
+            "confirm_start") echo "确认开始清理以上项目？[y/N]: " ;;
             "thank_you") echo "感谢您使用 CleanMac！再见！" ;;
-            "press_enter") echo "按回车键继续或 Ctrl+C 退出..." ;;
+            "press_enter") echo "按回车键继续..." ;;
             "cleaning") echo "正在清理..." ;;
             "cleaned") echo "已清理" ;;
             "skipped") echo "已跳过" ;;
@@ -102,21 +93,8 @@ get_text() {
             "no_items_cleaned") echo "没有项目被清理" ;;
             "no_items_skipped") echo "没有项目被跳过" ;;
             "all_processed") echo "所有选定项目已处理完成。感谢使用 CleanMac！" ;;
-            "user_caches") echo "用户级缓存和日志" ;;
-            "system_caches") echo "系统级缓存" ;;
-            "browser_caches") echo "浏览器缓存" ;;
-            "dev_tools") echo "开发工具" ;;
-            "app_caches") echo "应用程序缓存" ;;
-            "trash_misc") echo "垃圾箱和其他" ;;
-            "lang_menu") echo "语言和退出菜单" ;;
-            "select_lang") echo "选择语言：" ;;
-            "lang_english") echo "English" ;;
-            "lang_chinese") echo "中文 (Chinese)" ;;
-            "exit_program") echo "退出程序" ;;
-            "lang_changed") echo "语言切换成功！" ;;
-            "lang_saved") echo "语言偏好已保存。" ;;
-            "toggle_hint") echo "提示：输入数字来切换选择，8=开始清理，9=语言/退出" ;;
-            "current_selection") echo "当前选择" ;;
+            "processing_category") echo "正在处理类别" ;;
+            "category_complete") echo "类别处理完成" ;;
             *) echo "$key" ;;
         esac
     else
@@ -125,26 +103,22 @@ get_text() {
             "subtitle") echo "Interactive Cleanup Utility" ;;
             "description") echo "This tool helps you safely clean cache and junk files from your macOS system." ;;
             "begin") echo "You will be asked before anything is deleted. Let's begin." ;;
-            "menu_select") echo "Select cleanup categories (Multi-selection supported):" ;;
-            "menu_1") echo "User-level caches & logs" ;;
-            "menu_2") echo "System-level caches" ;;
-            "menu_3") echo "Browser caches" ;;
+            "menu_select") echo "Select cleanup categories:" ;;
+            "menu_1") echo "System caches & logs" ;;
+            "menu_2") echo "User app caches" ;;
+            "menu_3") echo "Browser data" ;;
             "menu_4") echo "Development tools" ;;
-            "menu_5") echo "Application caches" ;;
-            "menu_6") echo "Trash & miscellaneous" ;;
-            "menu_7") echo "Select all" ;;
-            "menu_8") echo "Start cleaning" ;;
-            "menu_9") echo "Language / Exit" ;;
+            "menu_5") echo "Trash & downloads" ;;
+            "menu_6") echo "System temp files" ;;
+            "menu_7") echo "Select all (clean everything)" ;;
+            "menu_8") echo "Language / Exit" ;;
             "requires_admin") echo "(requires admin)" ;;
-            "interactive") echo "(interactive)" ;;
-            "enter_choice") echo "Enter option number to toggle selection [1-9], or press Enter to see options: " ;;
-            "enter_number") echo "Enter number [1-9]: " ;;
-            "invalid_choice") echo "Invalid choice. Please select 1-9." ;;
-            "no_selection") echo "Please select at least one cleanup category." ;;
-            "selected_items") echo "Selected cleanup items:" ;;
-            "confirm_start") echo "Confirm to start cleaning the selected items? [y/N]: " ;;
+            "enter_choice") echo "Enter numbers (multi-select with spaces, e.g.: 1 3 5) or 8 for language menu: " ;;
+            "invalid_choice") echo "Invalid choice. Please enter numbers 1-8." ;;
+            "selected_items") echo "Items to be cleaned:" ;;
+            "confirm_start") echo "Confirm to start cleaning the above items? [y/N]: " ;;
             "thank_you") echo "Thank you for using CleanMac! Goodbye!" ;;
-            "press_enter") echo "Press Enter to continue or Ctrl+C to exit..." ;;
+            "press_enter") echo "Press Enter to continue..." ;;
             "cleaning") echo "Cleaning..." ;;
             "cleaned") echo "Cleaned" ;;
             "skipped") echo "Skipped" ;;
@@ -165,21 +139,8 @@ get_text() {
             "no_items_cleaned") echo "No items were cleaned" ;;
             "no_items_skipped") echo "No items were skipped" ;;
             "all_processed") echo "All selected items have been processed. Thank you for using CleanMac!" ;;
-            "user_caches") echo "User-Level Caches & Logs" ;;
-            "system_caches") echo "System-Level Caches" ;;
-            "browser_caches") echo "Browser Caches" ;;
-            "dev_tools") echo "Development Tools" ;;
-            "app_caches") echo "Application Caches" ;;
-            "trash_misc") echo "Trash & Miscellaneous" ;;
-            "lang_menu") echo "Language & Exit Menu" ;;
-            "select_lang") echo "Select Language:" ;;
-            "lang_english") echo "English" ;;
-            "lang_chinese") echo "中文 (Chinese)" ;;
-            "exit_program") echo "Exit Program" ;;
-            "lang_changed") echo "Language changed successfully!" ;;
-            "lang_saved") echo "Language preference saved." ;;
-            "toggle_hint") echo "Tip: Enter numbers to toggle selection, 8=Start cleaning, 9=Language/Exit" ;;
-            "current_selection") echo "Current Selection" ;;
+            "processing_category") echo "Processing category" ;;
+            "category_complete") echo "Category complete" ;;
             *) echo "$key" ;;
         esac
     fi
@@ -188,55 +149,6 @@ get_text() {
 # Save language preference
 save_language() {
     echo "$CURRENT_LANG" > "$LANG_FILE"
-}
-
-# Function to check if option is selected
-is_selected() {
-    local option="$1"
-    for selected in "${selected_options[@]}"; do
-        if [[ "$selected" == "$option" ]]; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Function to toggle selection
-toggle_selection() {
-    local option="$1"
-    local found=false
-    local new_array=()
-    
-    # Remove if already selected
-    for selected in "${selected_options[@]}"; do
-        if [[ "$selected" == "$option" ]]; then
-            found=true
-        else
-            new_array+=("$selected")
-        fi
-    done
-    
-    # Add if not found (was not selected)
-    if ! $found; then
-        new_array+=("$option")
-    fi
-    
-    selected_options=("${new_array[@]}")
-}
-
-# Function to select all options
-select_all() {
-    selected_options=(1 2 3 4 5 6)
-}
-
-# Function to get selection icon
-get_selection_icon() {
-    local option="$1"
-    if is_selected "$option"; then
-        echo "$SELECT_ICON"
-    else
-        echo "$UNSELECT_ICON"
-    fi
 }
 
 # Utility functions
@@ -289,265 +201,187 @@ get_size() {
     fi
 }
 
-# Function to safely remove directory contents
-safe_clean() {
-    local path="$1"
-    local description="$2"
-    local size
+# Function to clean multiple paths at once (batch cleaning)
+batch_clean() {
+    local category_name="$1"
+    shift
+    local paths=("$@")
+    local total_size="0B"
+    local valid_paths=()
     
-    if [[ ! -d "$path" ]]; then
-        print_info "$(get_text "path_not_found"): $path"
-        return 0
-    fi
-    
-    size=$(get_size "$path")
-    
-    if [[ "$size" == "0B" ]]; then
-        print_info "$(get_text "already_clean"): $description"
-        return 0
-    fi
-    
-    echo -e "${BOLD}${YELLOW}$description${NC}"
-    echo -e "  ${CYAN}→ Path: $path${NC}"
-    echo -e "  ${CYAN}→ Size: $size${NC}"
-    
-    read -p "$(echo -e ${WHITE}$(get_text "confirm_clean")${NC})" -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${CLEAN_ICON} $(get_text "cleaning")..."
-        if rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null; then
-            print_success "$(get_text "cleaned"): $description ($size $(get_text "size_freed"))"
-            cleaned_paths+=("$description: $size")
-            ((total_cleaned++))
-        else
-            print_error "$(get_text "failed"): $description"
-        fi
-    else
-        print_skip "$(get_text "skipped"): $description"
-        skipped_paths+=("$description")
-    fi
-    echo
-    ((total_items++))
-}
-
-# Function to clean with sudo
-sudo_clean() {
-    local path="$1"
-    local description="$2"
-    local size
-    
-    if [[ ! -d "$path" ]]; then
-        print_info "$(get_text "path_not_found"): $path"
-        return 0
-    fi
-    
-    size=$(get_size "$path")
-    
-    if [[ "$size" == "0B" ]]; then
-        print_info "$(get_text "already_clean"): $description"
-        return 0
-    fi
-    
-    echo -e "${BOLD}${YELLOW}$description${NC} ${RED}$(get_text "admin_required")${NC}"
-    echo -e "  ${CYAN}→ Path: $path${NC}"
-    echo -e "  ${CYAN}→ Size: $size${NC}"
-    
-    read -p "$(echo -e ${WHITE}$(get_text "confirm_clean")${NC})" -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${CLEAN_ICON} $(get_text "cleaning") $(get_text "admin_password")..."
-        if sudo rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null; then
-            print_success "$(get_text "cleaned"): $description ($size $(get_text "size_freed"))"
-            cleaned_paths+=("$description: $size")
-            ((total_cleaned++))
-        else
-            print_error "$(get_text "failed"): $description"
-        fi
-    else
-        print_skip "$(get_text "skipped"): $description"
-        skipped_paths+=("$description")
-    fi
-    echo
-    ((total_items++))
-}
-
-# Function to run command-based cleanup
-command_clean() {
-    local command="$1"
-    local description="$2"
-    
-    echo -e "${BOLD}${YELLOW}$description${NC}"
-    echo -e "  ${CYAN}→ Command: $command${NC}"
-    
-    read -p "$(echo -e ${WHITE}$(get_text "confirm_run")${NC})" -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${CLEAN_ICON} $(get_text "running")..."
-        if eval "$command" >/dev/null 2>&1; then
-            print_success "$(get_text "completed"): $description"
-            cleaned_paths+=("$description")
-            ((total_cleaned++))
-        else
-            print_error "$(get_text "failed_run"): $description"
-        fi
-    else
-        print_skip "$(get_text "skipped"): $description"
-        skipped_paths+=("$description")
-    fi
-    echo
-    ((total_items++))
-}
-
-# Check if application exists
-app_exists() {
-    local app_name="$1"
-    [[ -d "/Applications/$app_name.app" ]] || [[ -d "$HOME/Applications/$app_name.app" ]]
-}
-
-# Main cleanup functions
-clean_user_caches() {
     print_separator
-    echo -e "${BOLD}${COMPUTER_ICON} $(get_text "user_caches")${NC}"
+    echo -e "${BOLD}${COMPUTER_ICON} $category_name${NC}"
     print_separator
     
-    safe_clean "$HOME/Library/Caches" "User application caches"
-    safe_clean "$HOME/Library/Logs" "User application logs"
-    safe_clean "$HOME/Library/Application Support/CrashReporter" "Crash reports"
-    safe_clean "$HOME/Library/Saved Application State" "Saved application states"
-    safe_clean "$HOME/Library/Application Support/com.apple.sharedfilelist" "Shared file lists"
-}
-
-clean_system_caches() {
-    print_separator
-    echo -e "${BOLD}${COMPUTER_ICON} $(get_text "system_caches")${NC}"
-    print_separator
-    
-    sudo_clean "/Library/Caches" "System application caches"
-    sudo_clean "/private/var/folders" "System temporary files"
-    sudo_clean "/private/var/log" "System logs"
-    sudo_clean "/Library/Logs/DiagnosticReports" "System diagnostic reports"
-}
-
-clean_browser_caches() {
-    print_separator
-    echo -e "${BOLD}${BROWSER_ICON} $(get_text "browser_caches")${NC}"
-    print_separator
-    
-    safe_clean "$HOME/Library/Caches/com.apple.Safari" "Safari cache"
-    
-    if app_exists "Google Chrome"; then
-        safe_clean "$HOME/Library/Caches/Google/Chrome" "Chrome cache"
-        safe_clean "$HOME/Library/Application Support/Google/Chrome/Default/Application Cache" "Chrome application cache"
-    fi
-    
-    if [[ -d "$HOME/Library/Application Support/Firefox/Profiles" ]]; then
-        for profile in "$HOME/Library/Application Support/Firefox/Profiles"/*.default*; do
-            if [[ -d "$profile/cache2" ]]; then
-                safe_clean "$profile/cache2" "Firefox cache ($(basename "$profile"))"
+    # Check which paths exist and show total size
+    for path_desc in "${paths[@]}"; do
+        IFS='|' read -r path desc <<< "$path_desc"
+        if [[ -d "$path" ]]; then
+            local size=$(get_size "$path")
+            if [[ "$size" != "0B" ]]; then
+                valid_paths+=("$path_desc")
+                echo -e "${YELLOW}  ✓ $desc${NC} - $path ($size)"
             fi
-        done
-    fi
-}
-
-clean_dev_tools() {
-    print_separator
-    echo -e "${BOLD}${DEV_ICON} $(get_text "dev_tools")${NC}"
-    print_separator
-    
-    if app_exists "Xcode"; then
-        safe_clean "$HOME/Library/Developer/Xcode/DerivedData" "Xcode DerivedData"
-        safe_clean "$HOME/Library/Developer/Xcode/Archives" "Xcode Archives"
-        safe_clean "$HOME/Library/Developer/Xcode/iOS DeviceSupport" "iOS Device Support"
-        safe_clean "$HOME/Library/Developer/CoreSimulator/Caches" "CoreSimulator caches"
-    fi
-    
-    if app_exists "Visual Studio Code" || app_exists "VSCodium"; then
-        safe_clean "$HOME/Library/Application Support/Code/logs" "VSCode logs"
-        safe_clean "$HOME/Library/Application Support/Code/CachedData" "VSCode cached data"
-    fi
-    
-    if command -v npm >/dev/null 2>&1; then
-        safe_clean "$HOME/.npm" "npm cache"
-        safe_clean "$HOME/.node-gyp" "node-gyp cache"
-    fi
-    
-    if command -v brew >/dev/null 2>&1; then
-        command_clean "brew cleanup --prune=all" "Homebrew cleanup"
-        safe_clean "$(brew --cache)" "Homebrew cache"
-    fi
-    
-    if command -v pip3 >/dev/null 2>&1 || command -v pip >/dev/null 2>&1; then
-        safe_clean "$HOME/Library/Caches/pip" "Python pip cache"
-    fi
-    
-    if command -v cargo >/dev/null 2>&1; then
-        safe_clean "$HOME/.cargo/registry/cache" "Rust Cargo cache"
-    fi
-}
-
-clean_app_caches() {
-    print_separator
-    echo -e "${BOLD}🧩 $(get_text "app_caches")${NC}"
-    print_separator
-    
-    safe_clean "$HOME/Library/Application Support/Adobe/Common/Media Cache Files" "Adobe Media Cache"
-    safe_clean "$HOME/Library/Application Support/zoom.us/data" "Zoom cache"
-    safe_clean "$HOME/Library/Application Support/discord/Cache" "Discord cache"
-    safe_clean "$HOME/Library/Application Support/Spotify/PersistentCache" "Spotify cache"
-    safe_clean "$HOME/Library/Application Support/Slack/Cache" "Slack cache"
-    safe_clean "$HOME/Library/Application Support/Microsoft/Teams/Cache" "Microsoft Teams cache"
-}
-
-clean_trash_and_misc() {
-    print_separator
-    echo -e "${BOLD}${TRASH_ICON} $(get_text "trash_misc")${NC}"
-    print_separator
-    
-    safe_clean "$HOME/.Trash" "User Trash"
-    
-    # Check for external drive trash
-    for volume in /Volumes/*; do
-        if [[ -d "$volume/.Trashes" ]]; then
-            safe_clean "$volume/.Trashes" "Trash on $(basename "$volume")"
         fi
     done
     
-    safe_clean "$HOME/Library/Application Support/MobileSync/Backup" "iOS Device Backups"
-    safe_clean "$HOME/Downloads" "Downloads folder (be careful!)"
+    if [[ ${#valid_paths[@]} -eq 0 ]]; then
+        print_info "No items found to clean in this category"
+        return 0
+    fi
+    
+    echo ""
+    read -p "$(echo -e ${WHITE}Clean all items in this category? [y/N]: ${NC})" -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        for path_desc in "${valid_paths[@]}"; do
+            IFS='|' read -r path desc <<< "$path_desc"
+            echo -e "${CLEAN_ICON} Cleaning $desc..."
+            
+            local size=$(get_size "$path")
+            if sudo rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null || rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null; then
+                print_success "Cleaned: $desc ($size freed)"
+                cleaned_paths+=("$desc: $size")
+                ((total_cleaned++))
+            else
+                print_error "Failed to clean: $desc"
+            fi
+            ((total_items++))
+        done
+    else
+        print_skip "Skipped category: $category_name"
+        skipped_paths+=("$category_name")
+    fi
+    echo ""
+}
+
+# Clean system caches and logs
+clean_system_caches() {
+    local paths=(
+        "/Library/Caches|System application caches"
+        "/System/Library/Caches|System library caches"
+        "/var/log|System logs"
+        "/private/var/log|Private system logs"
+        "/Library/Logs|System application logs"
+        "/Library/Logs/DiagnosticReports|Diagnostic reports"
+        "/var/folders|System temporary folders"
+        "/private/tmp|Private temporary files"
+    )
+    batch_clean "$(get_text "menu_1")" "${paths[@]}"
+}
+
+# Clean user application caches
+clean_user_caches() {
+    local paths=(
+        "$HOME/Library/Caches|User application caches"
+        "$HOME/Library/Logs|User application logs"
+        "$HOME/Library/Application Support/CrashReporter|Crash reports"
+        "$HOME/Library/Saved Application State|Saved application states"
+        "$HOME/Library/Application Support/com.apple.sharedfilelist|Shared file lists"
+        "$HOME/Library/Preferences/ByHost|Host-specific preferences cache"
+        "$HOME/Library/Application Support/SyncServices|Sync services cache"
+        "$HOME/Library/Caches/com.apple.helpd|Help system cache"
+        "$HOME/Library/Caches/com.apple.iconservices|Icon services cache"
+    )
+    batch_clean "$(get_text "menu_2")" "${paths[@]}"
+}
+
+# Clean browser data
+clean_browser_data() {
+    local paths=(
+        "$HOME/Library/Caches/com.apple.Safari|Safari cache"
+        "$HOME/Library/Safari/History.db|Safari history"
+        "$HOME/Library/Safari/TopSites.plist|Safari top sites"
+        "$HOME/Library/Caches/Google/Chrome|Chrome cache"
+        "$HOME/Library/Application Support/Google/Chrome/Default/History|Chrome history"
+        "$HOME/Library/Application Support/Firefox/Profiles|Firefox profiles cache"
+        "$HOME/Library/Caches/Firefox|Firefox cache"
+        "$HOME/Library/Application Support/Microsoft Edge|Edge cache"
+        "$HOME/Library/Caches/com.operasoftware.Opera|Opera cache"
+    )
+    batch_clean "$(get_text "menu_3")" "${paths[@]}"
+}
+
+# Clean development tools
+clean_dev_tools() {
+    local paths=(
+        "$HOME/Library/Developer/Xcode/DerivedData|Xcode DerivedData"
+        "$HOME/Library/Developer/Xcode/Archives|Xcode Archives"
+        "$HOME/Library/Developer/Xcode/iOS DeviceSupport|iOS Device Support"
+        "$HOME/Library/Developer/CoreSimulator|iOS Simulator data"
+        "$HOME/.npm|npm cache"
+        "$HOME/.yarn|Yarn cache"
+        "$HOME/.node-gyp|node-gyp cache"
+        "$(brew --cache 2>/dev/null || echo '/tmp/homebrew')|Homebrew cache"
+        "$HOME/Library/Caches/pip|Python pip cache"
+        "$HOME/.cache/pip|Python pip user cache"
+        "$HOME/.cargo/registry/cache|Rust Cargo cache"
+        "$HOME/Library/Application Support/Code/logs|VSCode logs"
+        "$HOME/Library/Application Support/Code/CachedData|VSCode cache"
+        "$HOME/.docker|Docker cache"
+        "$HOME/Library/Containers/com.docker.docker|Docker containers"
+    )
+    batch_clean "$(get_text "menu_4")" "${paths[@]}"
+}
+
+# Clean trash and downloads
+clean_trash_downloads() {
+    local paths=(
+        "$HOME/.Trash|User Trash"
+        "$HOME/Downloads|Downloads folder"
+        "/Volumes/*/.Trashes|External drive trash"
+        "$HOME/Library/Application Support/MobileSync/Backup|iOS device backups"
+        "$HOME/Desktop/Screenshot*|Desktop screenshots"
+        "$HOME/Movies/Screenshots|Movie screenshots"
+    )
+    batch_clean "$(get_text "menu_5")" "${paths[@]}"
+}
+
+# Clean system temporary files
+clean_system_temp() {
+    local paths=(
+        "/private/var/folders|System temp folders"
+        "/tmp|Temporary files"
+        "/var/tmp|Variable temp files"
+        "/private/tmp|Private temp files"
+        "$HOME/Library/Caches/Cleanup At Startup|Startup cleanup cache"
+        "/Library/Caches/com.apple.bootstubs|Boot stub cache"
+        "/System/Library/Caches/com.apple.coreservices.uiagent|UI agent cache"
+        "/var/db/receipts|Package receipts"
+    )
+    batch_clean "$(get_text "menu_6")" "${paths[@]}"
 }
 
 # Function to show language menu
 show_language_menu() {
     print_separator
-    echo -e "${BOLD}${LANG_ICON} $(get_text "lang_menu")${NC}"
+    echo -e "${BOLD}${LANG_ICON} Language & Exit Menu${NC}"
     print_separator
     
-    echo -e "${BOLD}${WHITE}$(get_text "select_lang")${NC}"
+    echo -e "${BOLD}${WHITE}Select Language:${NC}"
     echo ""
-    echo -e "${CYAN}[1]${NC} $(get_text "lang_english")"
-    echo -e "${CYAN}[2]${NC} $(get_text "lang_chinese")"
-    echo -e "${CYAN}[3]${NC} $(get_text "exit_program")"
+    echo -e "${CYAN}[1]${NC} English"
+    echo -e "${CYAN}[2]${NC} 中文 (Chinese)"
+    echo -e "${CYAN}[3]${NC} Exit Program"
     echo ""
     
-    read -p "$(echo -e ${WHITE}$(get_text "enter_choice")${NC})" lang_choice
+    read -p "$(echo -e ${WHITE}Enter your choice [1-3]: ${NC})" lang_choice
     echo ""
     
     case $lang_choice in
         1)
             CURRENT_LANG="en"
             save_language
-            print_success "$(get_text "lang_changed")"
-            print_info "$(get_text "lang_saved")"
+            print_success "Language changed successfully!"
+            print_info "Language preference saved."
             sleep 2
             ;;
         2)
             CURRENT_LANG="cn"
             save_language
-            print_success "$(get_text "lang_changed")"
-            print_info "$(get_text "lang_saved")"
+            print_success "语言切换成功！"
+            print_info "语言偏好已保存。"
             sleep 2
             ;;
         3)
@@ -555,41 +389,30 @@ show_language_menu() {
             exit 0
             ;;
         *)
-            print_error "$(get_text "invalid_choice")"
+            print_error "Invalid choice"
             sleep 2
             ;;
     esac
 }
 
-# Function to show current selection
-show_current_selection() {
-    if [[ ${#selected_options[@]} -gt 0 ]]; then
-        echo ""
-        echo -e "${BOLD}${GREEN}$(get_text "current_selection"):${NC}"
-        for option in "${selected_options[@]}"; do
-            case $option in
-                1) echo -e "  ${SELECT_ICON} $(get_text "menu_1")" ;;
-                2) echo -e "  ${SELECT_ICON} $(get_text "menu_2") ${RED}$(get_text "requires_admin")${NC}" ;;
-                3) echo -e "  ${SELECT_ICON} $(get_text "menu_3")" ;;
-                4) echo -e "  ${SELECT_ICON} $(get_text "menu_4")" ;;
-                5) echo -e "  ${SELECT_ICON} $(get_text "menu_5")" ;;
-                6) echo -e "  ${SELECT_ICON} $(get_text "menu_6")" ;;
-            esac
-        done
-        echo ""
-    fi
-}
-
 # Function to execute selected cleanups
 execute_selected_cleanups() {
-    if [[ ${#selected_options[@]} -eq 0 ]]; then
-        print_error "$(get_text "no_selection")"
-        sleep 2
-        return
-    fi
+    local selections=($1)
     
     # Show selected items
-    show_current_selection
+    echo ""
+    echo -e "${BOLD}${GREEN}$(get_text "selected_items")${NC}"
+    for choice in "${selections[@]}"; do
+        case $choice in
+            1) echo -e "  ${CHECK_ICON} $(get_text "menu_1")" ;;
+            2) echo -e "  ${CHECK_ICON} $(get_text "menu_2")" ;;
+            3) echo -e "  ${CHECK_ICON} $(get_text "menu_3")" ;;
+            4) echo -e "  ${CHECK_ICON} $(get_text "menu_4")" ;;
+            5) echo -e "  ${CHECK_ICON} $(get_text "menu_5")" ;;
+            6) echo -e "  ${CHECK_ICON} $(get_text "menu_6")" ;;
+        esac
+    done
+    echo ""
     
     # Confirm before starting
     read -p "$(echo -e ${WHITE}$(get_text "confirm_start")${NC})" -n 1 -r
@@ -602,15 +425,18 @@ execute_selected_cleanups() {
     fi
     
     # Execute selected cleanup functions
-    for option in "${selected_options[@]}"; do
-        case $option in
-            1) clean_user_caches ;;
-            2) clean_system_caches ;;
-            3) clean_browser_caches ;;
+    for choice in "${selections[@]}"; do
+        echo -e "${BOLD}${BLUE}$(get_text "processing_category") $choice...${NC}"
+        case $choice in
+            1) clean_system_caches ;;
+            2) clean_user_caches ;;
+            3) clean_browser_data ;;
             4) clean_dev_tools ;;
-            5) clean_app_caches ;;
-            6) clean_trash_and_misc ;;
+            5) clean_trash_downloads ;;
+            6) clean_system_temp ;;
         esac
+        echo -e "${BOLD}${GREEN}$(get_text "category_complete") $choice${NC}"
+        echo ""
     done
 }
 
@@ -648,19 +474,17 @@ show_summary() {
 show_menu() {
     echo -e "${BOLD}${WHITE}$(get_text "menu_select")${NC}"
     echo ""
-    echo -e "${CYAN}[1]${NC} $(get_selection_icon 1) $(get_text "menu_1")"
-    echo -e "${CYAN}[2]${NC} $(get_selection_icon 2) $(get_text "menu_2") ${RED}$(get_text "requires_admin")${NC}"
-    echo -e "${CYAN}[3]${NC} $(get_selection_icon 3) $(get_text "menu_3")"
-    echo -e "${CYAN}[4]${NC} $(get_selection_icon 4) $(get_text "menu_4")"
-    echo -e "${CYAN}[5]${NC} $(get_selection_icon 5) $(get_text "menu_5")"
-    echo -e "${CYAN}[6]${NC} $(get_selection_icon 6) $(get_text "menu_6")"
+    echo -e "${CYAN}[1]${NC} $(get_text "menu_1") ${RED}$(get_text "requires_admin")${NC}"
+    echo -e "${CYAN}[2]${NC} $(get_text "menu_2")"
+    echo -e "${CYAN}[3]${NC} $(get_text "menu_3")"
+    echo -e "${CYAN}[4]${NC} $(get_text "menu_4")"
+    echo -e "${CYAN}[5]${NC} $(get_text "menu_5")"
+    echo -e "${CYAN}[6]${NC} $(get_text "menu_6") ${RED}$(get_text "requires_admin")${NC}"
     echo -e "${CYAN}[7]${NC} ${YELLOW}$(get_text "menu_7")${NC}"
-    echo -e "${CYAN}[8]${NC} ${GREEN}$(get_text "menu_8")${NC}"
-    echo -e "${CYAN}[9]${NC} $(get_text "menu_9")"
+    echo -e "${CYAN}[8]${NC} $(get_text "menu_8")"
     echo ""
-    echo -e "${YELLOW}$(get_text "toggle_hint")${NC}"
-    
-    show_current_selection
+    echo -e "${YELLOW}Tip: Enter numbers to select cleanup items, separate with spaces${NC}"
+    echo ""
 }
 
 # Main execution
@@ -694,38 +518,43 @@ main() {
     while true; do
         print_header
         show_menu
-        read -p "$(echo -e ${WHITE}$(get_text "enter_number")${NC})" choice
+        read -p "$(echo -e ${WHITE}$(get_text "enter_choice")${NC})" choice
         echo ""
         
-        case $choice in
-            1|2|3|4|5|6)
-                toggle_selection "$choice"
-                ;;
-            7)
-                select_all
-                ;;
-            8)
-                execute_selected_cleanups
-                if [[ ${#selected_options[@]} -gt 0 ]]; then
-                    show_summary
-                    echo ""
-                    read -p "$(echo -e ${WHITE}$(get_text "press_enter")${NC})"
-                    # Reset selections after cleanup
-                    selected_options=()
-                    total_cleaned=0
-                    total_items=0
-                    cleaned_paths=()
-                    skipped_paths=()
-                fi
-                ;;
-            9)
-                show_language_menu
-                ;;
-            *)
-                print_error "$(get_text "invalid_choice")"
-                sleep 2
-                ;;
-        esac
+        # Handle language menu
+        if [[ "$choice" == "8" ]]; then
+            show_language_menu
+            continue
+        fi
+        
+        # Parse input - handle both single numbers and space-separated numbers
+        if [[ "$choice" =~ ^[1-7]([[:space:]]+[1-7])*$ ]]; then
+            # Convert choice to array
+            read -ra selections <<< "$choice"
+            
+            # Handle "7" (select all)
+            if [[ " ${selections[*]} " =~ " 7 " ]]; then
+                selections=(1 2 3 4 5 6)
+            fi
+            
+            # Remove duplicates and sort
+            selections=($(printf '%s\n' "${selections[@]}" | grep -E '^[1-6]$' | sort -u))
+            
+            if [[ ${#selections[@]} -gt 0 ]]; then
+                execute_selected_cleanups "${selections[*]}"
+                show_summary
+                echo ""
+                read -p "$(echo -e ${WHITE}$(get_text "press_enter")${NC})"
+                # Reset counters for next round
+                total_cleaned=0
+                total_items=0
+                cleaned_paths=()
+                skipped_paths=()
+            fi
+        else
+            print_error "$(get_text "invalid_choice")"
+            sleep 2
+        fi
     done
 }
 

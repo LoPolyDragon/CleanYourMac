@@ -96,28 +96,25 @@ The script supports both English and Chinese interfaces:
 # Interactive language switching available in menu option [8]
 ```
 
-### Interactive Menu with Multi-Selection
+### Interactive Menu with Direct Multi-Selection
 
-After running the script, you'll see the following menu options with checkbox-style selection:
+After running the script, you can directly input numbers to clean multiple categories:
 
 ```
-Select cleanup categories (Multi-selection supported):
+Select cleanup categories:
 
-[1] ☐ User-level caches & logs
-[2] ☐ System-level caches (requires admin)
-[3] ☐ Browser caches
-[4] ☐ Development tools
-[5] ☐ Application caches
-[6] ☐ Trash & miscellaneous
-[7] Select all
-[8] Start cleaning
-[9] Language / Exit
+[1] User-level caches & logs
+[2] System-level caches (requires admin)
+[3] Browser caches
+[4] Development tools
+[5] Application caches
+[6] Trash & miscellaneous
+[7] Select all (clean everything)
+[8] Language / Exit
 
-Tip: Enter numbers to toggle selection, 8=Start cleaning, 9=Language/Exit
+Tip: Enter numbers to select cleanup items, separate with spaces
 
-Current Selection:
-  ☑️ User-level caches & logs
-  ☑️ Browser caches
+Enter numbers (multi-select with spaces, e.g.: 1 3 5) or 8 for language menu:
 ```
 
 ### Example Usage
@@ -126,11 +123,19 @@ Current Selection:
 # Quick start
 ./clean_mac.sh
 
-# Multi-selection workflow:
-# 1. Select multiple categories by entering their numbers (1, 3, 5)
-# 2. Use option 7 to select all categories at once
-# 3. Press 8 to start cleaning selected items
-# 4. For each cleanup item, you'll see prompts like:
+# Direct multi-selection examples:
+1 3 5          # Clean user caches, browser caches, and app caches
+7              # Clean everything (all categories)
+2              # Clean only system caches
+1 2 3 4 5 6    # Clean all categories manually
+
+# After selection, you'll see confirmation and then prompts like:
+Items to be cleaned:
+  ✅ User-level caches & logs
+  ✅ Browser caches
+  ✅ Application caches
+
+Confirm to start cleaning the above items? [y/N]: y
 
 User application caches
   → Path: /Users/username/Library/Caches
