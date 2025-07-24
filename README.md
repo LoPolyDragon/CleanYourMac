@@ -1,5 +1,14 @@
 # 🧼 CleanMac - macOS System Cleanup Tool
 
+<div align="center">
+
+[![Language](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
+[![语言](https://img.shields.io/badge/语言-中文-red.svg)](README_CN.md)
+
+**[🇺🇸 English](README.md) | [🇨🇳 中文](README_CN.md)**
+
+</div>
+
 A powerful, interactive macOS system cleanup utility that helps you safely clean cache and junk files from your system.
 
 ## ✨ Features
@@ -72,6 +81,20 @@ A powerful, interactive macOS system cleanup utility that helps you safely clean
    ```bash
    ./clean_mac.sh
    ```
+
+### Language Support
+
+The script supports both English and Chinese interfaces:
+
+```bash
+# Run with English interface (default)
+./clean_mac.sh --lang=en
+
+# Run with Chinese interface
+./clean_mac.sh --lang=cn
+
+# Interactive language switching available in menu option [8]
+```
 
 ### Interactive Menu
 
@@ -153,6 +176,10 @@ If you encounter issues or have suggestions:
 
 - 📧 Submit an [Issue](https://github.com/your-username/CleanYourMac/issues)
 - 💬 Join [Discussions](https://github.com/your-username/CleanYourMac/discussions)
+
+## 👨‍💻 About the Author
+
+This project was created by **a middle school student** who is passionate about programming and macOS system optimization. Despite being young, the author has put significant effort into creating a professional-grade cleanup tool that rivals commercial software.
 
 ## 🎉 Acknowledgments
 

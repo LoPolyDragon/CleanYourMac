@@ -1,5 +1,14 @@
 # 🧼 CleanMac - macOS 系统清理工具
 
+<div align="center">
+
+[![Language](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
+[![语言](https://img.shields.io/badge/语言-中文-red.svg)](README_CN.md)
+
+**[🇺🇸 English](README.md) | [🇨🇳 中文](README_CN.md)**
+
+</div>
+
 一个强大的、交互式的 macOS 系统清理实用工具，帮助您安全地清理缓存和垃圾文件。
 
 ## ✨ 特性
@@ -72,6 +81,20 @@
    ```bash
    ./clean_mac.sh
    ```
+
+### 语言支持
+
+脚本支持中英文界面：
+
+```bash
+# 使用英文界面运行（默认）
+./clean_mac.sh --lang=en
+
+# 使用中文界面运行
+./clean_mac.sh --lang=cn
+
+# 可在菜单选项 [8] 中进行交互式语言切换
+```
 
 ### 交互式菜单
 
@@ -153,6 +176,10 @@ Do you want to clean this? [y/N]: y
 
 - 📧 提交 [Issue](https://github.com/your-username/CleanYourMac/issues)
 - 💬 参与 [Discussions](https://github.com/your-username/CleanYourMac/discussions)
+
+## 👨‍💻 关于作者
+
+这个项目是由一名**初中生**开发的，他对编程和 macOS 系统优化充满热情。尽管年纪尚小，但作者投入了大量精力来创建一个专业级的清理工具，能够媲美商业软件。
 
 ## 🎉 致谢
 
