@@ -1,4 +1,4 @@
-# 🧼 CleanMac - macOS System Cleanup Tool
+# 🧹 CleanYourMac - Advanced macOS System Cleanup Tool
 
 <div align="center">
 
@@ -9,7 +9,7 @@
 
 </div>
 
-A powerful, interactive macOS system cleanup utility that helps you safely clean cache and junk files from your system.
+A powerful, interactive macOS system cleanup utility that helps you safely clean cache and junk files from your system. Created by a middle school student.
 
 ## Updates
 
@@ -24,64 +24,35 @@ Since I am a middle school student, I may not be able to update this project in 
 - 📈 **Detailed Summary** - Shows cleanup results and space saved
 - ⚡ **Smart Detection** - Automatically detects installed applications and dev tools
 
-## 🧹 Cleanup Categories
+## 🧹 Features
 
-### 1. User-Level Caches & Logs
-- User application caches (`~/Library/Caches`)
-- User application logs (`~/Library/Logs`)
-- Crash reports (`~/Library/Application Support/CrashReporter`)
-- Saved application states (`~/Library/Saved Application State`)
-- Shared file lists (`~/Library/Application Support/com.apple.sharedfilelist`)
-- QuickLook thumbnails (`~/Library/Caches/com.apple.QuickLook.thumbnailcache`)
-- Font cache (`~/Library/Caches/com.apple.ATS`)
+### Auto Cleanup
+- System and user cache files (older than configurable days)
+- Application logs
+- Temporary files
+- Homebrew cleanup and optimization
+- Trash (files older than configurable days)
+- Browser caches (Safari)
+- Application caches (Spotify)
+- Development tool caches (Xcode, npm, yarn)
+- Docker system cleanup
+- System memory cache purging
 
-### 2. System-Level Caches (Requires Admin)
-- System application caches (`/Library/Caches`)
-- System temporary files (`/private/var/folders`)
-- System logs (`/private/var/log`)
-- System diagnostic reports (`/Library/Logs/DiagnosticReports`)
-- Kernel extension cache (`/System/Library/Caches/com.apple.kext.caches`)
-- Launch services database (`/Library/Caches/com.apple.LaunchServices`)
+### Application Uninstaller
+- Scan installed applications
+- Search functionality with interactive selection
+- Complete removal of application bundles and related files:
+  - Application bundle
+  - User data (preferences, caches, saved states)
+  - System data
+  - Bundle identifier based files
 
-### 3. Browser Caches
-- **Safari** - Cache files, cookies, history, downloads
-- **Google Chrome** - Cache, application cache, cookies, history
-- **Firefox** - Cache for all profiles, cookies, history
-- **Microsoft Edge** - Cache and browsing data
-- **Opera** - Cache and temporary files
-
-### 4. Development Tools
-- **Xcode** - DerivedData, Archives, iOS Device Support, CoreSimulator caches
-- **Visual Studio Code** - Logs and cached data
-- **npm/Node.js** - npm cache and node-gyp cache
-- **Homebrew** - Package cache and cleanup
-- **Python pip** - pip cache
-- **Rust Cargo** - Cargo cache
-- **Docker** - Images, containers, and build cache
-- **Git** - Global git cache and temporary files
-- **CocoaPods** - Pod cache and specs
-
-### 5. Application Caches
-- Adobe Media Cache and temporary files
-- Zoom cache and logs
-- Discord cache and logs
-- Spotify cache
-- Slack cache and logs
-- Microsoft Teams cache
-- Dropbox cache
-- Google Drive cache
-- OneDrive cache
-- Steam cache
-- VLC media cache
-
-### 6. Trash & Miscellaneous
-- User Trash (`~/.Trash`)
-- External drive trash (`/Volumes/*/.Trashes`)
-- iOS device backups (`~/Library/Application Support/MobileSync/Backup`)
-- Downloads folder (use with caution)
-- Desktop screenshots
-- Mail attachments cache
-- iMessage attachments cache
+### Additional Features
+- Bilingual interface (English and Chinese)
+- Dry run mode to preview cleanup
+- Configurable retention period (default: 7 days)
+- Real-time disk space monitoring
+- Interactive color-coded terminal interface
 
 ## 🚀 Usage
 
@@ -117,25 +88,18 @@ The script supports both English and Chinese interfaces:
 # Interactive language switching available in menu option [8]
 ```
 
-### Interactive Menu with Direct Multi-Selection
+### Interactive Menu
 
-After running the script, you can directly input numbers to clean multiple categories:
+After running the script, you'll see a simple menu with the following options:
 
 ```
-Select cleanup categories:
+Select function:
 
-[1] User-level caches & logs
-[2] System-level caches (requires admin)
-[3] Browser caches
-[4] Development tools
-[5] Application caches
-[6] Trash & miscellaneous
-[7] Select all (clean everything)
-[8] Language / Exit
+[1] Auto cleanup
+[2] Uninstall applications
+[3] Language / 语言
 
-Tip: Enter numbers to select cleanup items, separate with spaces
-
-Enter numbers (multi-select with spaces, e.g.: 1 3 5) or 8 for language menu:
+Enter 1, 2 or 3:
 ```
 
 ### Example Usage
@@ -144,46 +108,37 @@ Enter numbers (multi-select with spaces, e.g.: 1 3 5) or 8 for language menu:
 # Quick start
 ./clean_mac.sh
 
-# Direct multi-selection examples:
-1 3 5          # Clean user caches, browser caches, and app caches
-7              # Clean everything (all categories)
-2              # Clean only system caches
-1 2 3 4 5 6    # Clean all categories manually
+# Run with specific options
+./clean_mac.sh --auto         # Run auto cleanup directly
+./clean_mac.sh --lang=cn      # Use Chinese interface
+./clean_mac.sh --dry-run      # Preview what would be cleaned without deleting
+./clean_mac.sh 30             # Keep files newer than 30 days (default is 7)
 
-# After selection, you'll see confirmation and then prompts like:
-Items to be cleaned:
-  ✅ User-level caches & logs
-  ✅ Browser caches
-  ✅ Application caches
+# After selecting auto cleanup, you'll see:
+Auto Cleanup Mode
+This will automatically clean all safe items without asking for each one.
+Items requiring confirmation (Downloads, Desktop files) will still ask for permission.
 
-Confirm to start cleaning the above items? [y/N]: y
-
-User application caches
-  → Path: /Users/username/Library/Caches
-  → Size: 2.3GB
-Do you want to clean this? [y/N]: y
-🧹 Cleaning...
-✅ Cleaned: User application caches (2.3GB freed)
+Start auto cleanup? [y/N]: y
 ```
 
 ## 🛡️ Safety Features
 
 - **Confirmation Prompts** - Always asks before deleting anything
-- **Size Display** - Shows disk space used by each item
+- **Selective Cleaning** - Only removes files older than a specified number of days (default: 7)
 - **Path Validation** - Verifies paths exist before attempting cleanup
 - **Error Handling** - Gracefully handles permission errors and other issues
-- **Read-only Check** - Won't delete critical system files
+- **Protected Paths** - Excludes critical system paths from cleanup
 
 ## ⚠️ Important Notes
 
 1. **Admin Privileges** - System-level cache cleanup requires sudo access
 2. **Backup Important Data** - While the script is safe, always backup important data
 3. **Development Environment** - Cleaning dev tool caches may require re-downloading dependencies
-4. **App Settings** - Some applications may need to reconfigure preferences
-5. **Browser Data** - Cleaning browser caches will log you out of websites and remove saved passwords if not synced
-6. **iOS Backups** - Removing iOS device backups will prevent restoring from local backups
+4. **Docker Context** - The script checks Docker context to avoid cleaning remote Docker instances
+5. **Age-Based Cleaning** - Only files older than the specified days (default: 7) are removed
+6. **Homebrew Packages** - Running cleanup may remove old versions of packages
 7. **Xcode Data** - Cleaning Xcode DerivedData may require rebuilding projects
-8. **Docker Images** - Cleaning Docker cache will remove downloaded images and require re-downloading
 
 ## 🔧 System Requirements
 
@@ -193,31 +148,31 @@ Do you want to clean this? [y/N]: y
 
 ## 📊 Performance Benefits
 
-After using CleanMac, you may experience:
+After using CleanYourMac, you may experience:
 
 - ⚡ Faster system startup
 - 💾 Significant disk space recovery (typically 1-10GB)
 - 🔄 Improved application responsiveness
-- 🗂️ Better Finder performance
-- 🚀 Reduced memory usage
+- 🚀 Reduced memory usage after purging system memory cache
 - 🔧 Faster app launches
-- 📱 Better iOS device sync performance
+- 🧹 More organized system with less clutter
 
 ## 🔍 What Gets Cleaned
 
-CleanMac safely removes:
+CleanYourMac safely removes:
 
-- **Cache Files** - Temporary data that apps recreate automatically
-- **Log Files** - System and application logs (keeping recent ones)
+- **Cache Files** - Temporary data that apps recreate automatically (older than specified days)
+- **Log Files** - System and application logs (older than specified days)
 - **Temporary Files** - Files in temp directories that are no longer needed
-- **Thumbnails** - Preview images that can be regenerated
-- **Download History** - Browser download records (not the actual files)
-- **Crash Reports** - Old crash dumps and diagnostic data
-- **Build Artifacts** - Compiled code that can be rebuilt
+- **Homebrew** - Old versions of packages and unused dependencies
+- **Development Tool Caches** - npm, yarn, Xcode derived data
+- **Docker** - Unused images, containers, and volumes (only for local Docker contexts)
+- **Trash** - Files in the trash (older than specified days)
+- **Application Data** - When using the uninstaller, all related application files
 
-CleanMac **NEVER** removes:
+CleanYourMac **NEVER** removes:
 - Personal documents or files
-- Application preferences or settings
+- Recent application data (within the specified days threshold)
 - Passwords or keychain data
 - Photos, music, or media files
 - Active project files
@@ -245,7 +200,7 @@ If you encounter issues or have suggestions:
 
 ## 🎉 Acknowledgments
 
-Thanks to all contributors and users for their support!
+This project was created by a middle school student. Thanks to all contributors and users for their support!
 
 ---
 
