@@ -49,10 +49,6 @@ readonly SEARCH_ICON="🔍"
 readonly UNINSTALL_ICON="🗑️"
 
 # Global variables
-total_cleaned=0
-total_items=0
-cleaned_paths=()
-skipped_paths=()
 initial_free_space=0
 final_free_space=0
 
@@ -239,284 +235,13 @@ get_size() {
     fi
 }
 
-# Global variable for auto cleanup mode
-auto_cleanup_mode=false
-total_space_freed=0
 
-# Function to convert size to bytes for calculation
-size_to_bytes() {
-    local size="$1"
-    local number=$(echo "$size" | sed 's/[^0-9.]//g')
-    local unit=$(echo "$size" | sed 's/[0-9.]//g' | tr '[:lower:]' '[:upper:]')
-    
-    case "$unit" in
-        "B") printf "%.0f" "$number" ;;
-        "K"|"KB") printf "%.0f" "$(echo "$number * 1024" | bc 2>/dev/null || echo "0")" ;;
-        "M"|"MB") printf "%.0f" "$(echo "$number * 1024 * 1024" | bc 2>/dev/null || echo "0")" ;;
-        "G"|"GB") printf "%.0f" "$(echo "$number * 1024 * 1024 * 1024" | bc 2>/dev/null || echo "0")" ;;
-        *) echo "0" ;;
-    esac
-}
 
-# Function to convert bytes back to human readable
-bytes_to_human() {
-    local bytes="$1"
-    if [[ "$bytes" -ge 1073741824 ]]; then
-        echo "$(echo "scale=2; $bytes / 1073741824" | bc 2>/dev/null || echo "0")GB"
-    elif [[ "$bytes" -ge 1048576 ]]; then
-        echo "$(echo "scale=2; $bytes / 1048576" | bc 2>/dev/null || echo "0")MB"
-    elif [[ "$bytes" -ge 1024 ]]; then
-        echo "$(echo "scale=2; $bytes / 1024" | bc 2>/dev/null || echo "0")KB"
-    else
-        echo "${bytes}B"
-    fi
-}
 
-# Function to clean multiple paths at once (batch cleaning)
-batch_clean() {
-    local category_name="$1"
-    shift
-    local paths=("$@")
-    local total_size="0B"
-    local valid_paths=()
-    
-    print_separator
-    echo -e "${BOLD}${COMPUTER_ICON} $category_name${NC}"
-    print_separator
-    
-    # Check which paths exist and show total size
-    for path_desc in "${paths[@]}"; do
-        IFS='|' read -r path desc <<< "$path_desc"
-        if [[ -d "$path" ]]; then
-            local size=$(get_size "$path")
-            if [[ "$size" != "0B" ]]; then
-                valid_paths+=("$path_desc")
-                echo -e "${YELLOW}  ✓ $desc${NC} - $path ($size)"
-            fi
-        fi
-    done
-    
-    if [[ ${#valid_paths[@]} -eq 0 ]]; then
-        print_info "No items found to clean in this category"
-        return 0
-    fi
-    
-    # Auto cleanup mode or manual confirmation
-    local should_clean=false
-    if [[ "$auto_cleanup_mode" == "true" ]]; then
-        should_clean=true
-        echo ""
-        echo -e "${GREEN}$(get_text "auto_cleanup_running")${NC}"
-    else
-        echo ""
-        read -p "$(echo -e ${WHITE}Clean all items in this category? [y/N]: ${NC})" -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            should_clean=true
-        fi
-    fi
-    
-    if [[ "$should_clean" == "true" ]]; then
-        for path_desc in "${valid_paths[@]}"; do
-            IFS='|' read -r path desc <<< "$path_desc"
-            echo -e "${CLEAN_ICON} $(get_text "cleaning") $desc..."
-            
-            local size=$(get_size "$path")
-            local size_bytes=$(size_to_bytes "$size")
-            
-            if sudo rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null || rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null; then
-                print_success "$(get_text "cleaned"): $desc ($size $(get_text "size_freed"))"
-                cleaned_paths+=("$desc: $size")
-                total_space_freed=$((total_space_freed + size_bytes))
-                ((total_cleaned++))
-            else
-                print_error "$(get_text "failed"): $desc"
-            fi
-            ((total_items++))
-        done
-    else
-        print_skip "$(get_text "skipped") category: $category_name"
-        skipped_paths+=("$category_name")
-    fi
-    echo ""
-}
 
-# Function for auto cleanup with sensitive path confirmation
-auto_batch_clean() {
-    local category_name="$1"
-    shift
-    local paths=("$@")
-    local sensitive_paths=("Downloads" "Desktop" "Screenshots")
-    local valid_paths=()
-    
-    print_separator
-    echo -e "${BOLD}${COMPUTER_ICON} $category_name${NC}"
-    print_separator
-    
-    # Check which paths exist and show total size
-    for path_desc in "${paths[@]}"; do
-        IFS='|' read -r path desc <<< "$path_desc"
-        if [[ -d "$path" ]]; then
-            local size=$(get_size "$path")
-            if [[ "$size" != "0B" ]]; then
-                valid_paths+=("$path_desc")
-                echo -e "${YELLOW}  ✓ $desc${NC} - $path ($size)"
-            fi
-        fi
-    done
-    
-    if [[ ${#valid_paths[@]} -eq 0 ]]; then
-        print_info "No items found to clean in this category"
-        return 0
-    fi
-    
-    echo ""
-    
-    for path_desc in "${valid_paths[@]}"; do
-        IFS='|' read -r path desc <<< "$path_desc"
-        
-        # Check if this is a sensitive path
-        local is_sensitive=false
-        for sensitive in "${sensitive_paths[@]}"; do
-            if [[ "$desc" == *"$sensitive"* ]]; then
-                is_sensitive=true
-                break
-            fi
-        done
-        
-        local should_clean=false
-        if [[ "$is_sensitive" == "true" ]]; then
-            echo -e "${YELLOW}${WARNING_ICON} $(get_text "confirm_sensitive"): $desc${NC}"
-            read -p "$(echo -e ${WHITE}$(get_text "confirm_clean")${NC})" -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                should_clean=true
-            fi
-        else
-            should_clean=true
-        fi
-        
-        if [[ "$should_clean" == "true" ]]; then
-            echo -e "${CLEAN_ICON} $(get_text "cleaning") $desc..."
-            
-            local size=$(get_size "$path")
-            local size_bytes=$(size_to_bytes "$size")
-            
-            if sudo rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null || rm -rf "$path"/* "$path"/.[^.]* 2>/dev/null; then
-                print_success "$(get_text "cleaned"): $desc ($size $(get_text "size_freed"))"
-                cleaned_paths+=("$desc: $size")
-                total_space_freed=$((total_space_freed + size_bytes))
-                ((total_cleaned++))
-            else
-                print_error "$(get_text "failed"): $desc"
-            fi
-        else
-            print_skip "$(get_text "skipped"): $desc"
-            skipped_paths+=("$desc")
-        fi
-        ((total_items++))
-    done
-    echo ""
-}
 
-# Clean system caches and logs
-clean_system_caches() {
-    local paths=(
-        "/Library/Caches|System application caches"
-        "/System/Library/Caches|System library caches"
-        "/var/log|System logs"
-        "/private/var/log|Private system logs"
-        "/Library/Logs|System application logs"
-        "/Library/Logs/DiagnosticReports|Diagnostic reports"
-        "/var/folders|System temporary folders"
-        "/private/tmp|Private temporary files"
-    )
-    batch_clean "$(get_text "menu_1")" "${paths[@]}"
-}
 
-# Clean user application caches
-clean_user_caches() {
-    local paths=(
-        "$HOME/Library/Caches|User application caches"
-        "$HOME/Library/Logs|User application logs"
-        "$HOME/Library/Application Support/CrashReporter|Crash reports"
-        "$HOME/Library/Saved Application State|Saved application states"
-        "$HOME/Library/Application Support/com.apple.sharedfilelist|Shared file lists"
-        "$HOME/Library/Preferences/ByHost|Host-specific preferences cache"
-        "$HOME/Library/Application Support/SyncServices|Sync services cache"
-        "$HOME/Library/Caches/com.apple.helpd|Help system cache"
-        "$HOME/Library/Caches/com.apple.iconservices|Icon services cache"
-    )
-    batch_clean "$(get_text "menu_2")" "${paths[@]}"
-}
-
-# Clean browser data
-clean_browser_data() {
-    local paths=(
-        "$HOME/Library/Caches/com.apple.Safari|Safari cache"
-        "$HOME/Library/Safari/History.db|Safari history"
-        "$HOME/Library/Safari/TopSites.plist|Safari top sites"
-        "$HOME/Library/Caches/Google/Chrome|Chrome cache"
-        "$HOME/Library/Application Support/Google/Chrome/Default/History|Chrome history"
-        "$HOME/Library/Application Support/Firefox/Profiles|Firefox profiles cache"
-        "$HOME/Library/Caches/Firefox|Firefox cache"
-        "$HOME/Library/Application Support/Microsoft Edge|Edge cache"
-        "$HOME/Library/Caches/com.operasoftware.Opera|Opera cache"
-    )
-    batch_clean "$(get_text "menu_3")" "${paths[@]}"
-}
-
-# Clean development tools
-clean_dev_tools() {
-    local paths=(
-        "$HOME/Library/Developer/Xcode/DerivedData|Xcode DerivedData"
-        "$HOME/Library/Developer/Xcode/Archives|Xcode Archives"
-        "$HOME/Library/Developer/Xcode/iOS DeviceSupport|iOS Device Support"
-        "$HOME/Library/Developer/CoreSimulator|iOS Simulator data"
-        "$HOME/.npm|npm cache"
-        "$HOME/.yarn|Yarn cache"
-        "$HOME/.node-gyp|node-gyp cache"
-        "$(brew --cache 2>/dev/null || echo '/tmp/homebrew')|Homebrew cache"
-        "$HOME/Library/Caches/pip|Python pip cache"
-        "$HOME/.cache/pip|Python pip user cache"
-        "$HOME/.cargo/registry/cache|Rust Cargo cache"
-        "$HOME/Library/Application Support/Code/logs|VSCode logs"
-        "$HOME/Library/Application Support/Code/CachedData|VSCode cache"
-        "$HOME/.docker|Docker cache"
-        "$HOME/Library/Containers/com.docker.docker|Docker containers"
-    )
-    batch_clean "$(get_text "menu_4")" "${paths[@]}"
-}
-
-# Clean trash and downloads
-clean_trash_downloads() {
-    local paths=(
-        "$HOME/.Trash|User Trash"
-        "$HOME/Downloads|Downloads folder"
-        "/Volumes/*/.Trashes|External drive trash"
-        "$HOME/Library/Application Support/MobileSync/Backup|iOS device backups"
-        "$HOME/Desktop/Screenshot*|Desktop screenshots"
-        "$HOME/Movies/Screenshots|Movie screenshots"
-    )
-    batch_clean "$(get_text "menu_5")" "${paths[@]}"
-}
-
-# Clean system temporary files
-clean_system_temp() {
-    local paths=(
-        "/private/var/folders|System temp folders"
-        "/tmp|Temporary files"
-        "/var/tmp|Variable temp files"
-        "/private/tmp|Private temp files"
-        "$HOME/Library/Caches/Cleanup At Startup|Startup cleanup cache"
-        "/Library/Caches/com.apple.bootstubs|Boot stub cache"
-        "/System/Library/Caches/com.apple.coreservices.uiagent|UI agent cache"
-        "/var/db/receipts|Package receipts"
-    )
-    batch_clean "$(get_text "menu_6")" "${paths[@]}"
-}
-
-# Function to execute auto cleanup
+# Function to execute auto cleanup - Using improved cleanmac.sh logic
 execute_auto_cleanup() {
     print_separator
     echo -e "${BOLD}${SPARKLE_ICON} $(get_text "auto_cleanup_title")${NC}"
@@ -535,96 +260,144 @@ execute_auto_cleanup() {
         return
     fi
     
-    # Set auto cleanup mode
-    auto_cleanup_mode=true
-    total_space_freed=0
+    # Request sudo permissions
+    echo "Requesting sudo permissions..."
+    sudo -v
     
     echo ""
     echo -e "${BOLD}${GREEN}$(get_text "auto_cleanup_running")${NC}"
+    echo "Starting macOS selective cleanup (removing files older than ${DAYS_TO_KEEP} days)..."
     echo ""
     
-    # Execute all cleanup categories automatically
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 1: $(get_text "menu_1")${NC}"
-    clean_system_caches
+    # Get initial disk space
+    local free_storage=$(df -k / | awk 'NR==2 {print $4}')
+    local total_storage=$(df -k / | awk 'NR==2 {print $2}')
+    local free_storage_gb=$(echo "scale=2; $free_storage / 1024 / 1024" | bc)
+    local total_storage_gb=$(echo "scale=2; $total_storage / 1024 / 1024" | bc)
     
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 3: $(get_text "menu_3")${NC}"
-    clean_user_caches
+    echo "Free storage: $free_storage_gb Gi / Total storage: $total_storage_gb Gi"
+    echo ""
     
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 4: $(get_text "menu_4")${NC}"
-    clean_browser_data
+    # Clear system and user cache files
+    echo "Clearing system and user cache files older than ${DAYS_TO_KEEP} days..."
+    sudo find /Library/Caches/* -type f -mtime +${DAYS_TO_KEEP} \( ! -path "/Library/Caches/com.apple.amsengagementd.classicdatavault" \
+                                                   ! -path "/Library/Caches/com.apple.aned" \
+                                                   ! -path "/Library/Caches/com.apple.aneuserd" \
+                                                   ! -path "/Library/Caches/com.apple.iconservices.store" \) \
+        -exec rm {} \; -print 2>/dev/null || echo "Skipped restricted files in system cache."
     
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 5: $(get_text "menu_5")${NC}"
-    clean_dev_tools
+    find ~/Library/Caches/* -type f -mtime +${DAYS_TO_KEEP} -exec sudo rm -f {} \; -print 2>/dev/null || echo "Error clearing user cache."
     
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 6: $(get_text "menu_6")${NC}"
-    # Use special function for sensitive paths
-    clean_trash_downloads_auto
+    # Remove application logs
+    echo "Removing application logs older than ${DAYS_TO_KEEP} days..."
+    sudo find /Library/Logs -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Skipped restricted files in system logs."
+    find ~/Library/Logs -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Error clearing user logs."
     
-    echo -e "${BOLD}${BLUE}$(get_text "processing_category") 7: $(get_text "menu_7")${NC}"
-    clean_system_temp
+    # Clear temporary files
+    echo "Clearing temporary files older than ${DAYS_TO_KEEP} days..."
+    sudo find /private/var/tmp/* -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Skipped restricted files in system tmp."
+    find /tmp/* -type f -mtime +${DAYS_TO_KEEP} ! -path "/tmp/tmp-mount-*" -exec rm {} \; -print 2>/dev/null || echo "Skipped restricted tmp files."
     
-    # Reset auto cleanup mode
-    auto_cleanup_mode=false
+    # Homebrew cleanup
+    if command -v brew >/dev/null 2>&1; then
+        echo "Running Homebrew cleanup and cache clearing..."
+        brew cleanup --prune=${DAYS_TO_KEEP} || echo "Homebrew cleanup encountered an error."
+        brew autoremove || echo "Homebrew autoremove encountered an error."
+        brew doctor || echo "Homebrew doctor encountered an error."
+    fi
     
-    # Show auto cleanup summary
-    show_auto_cleanup_summary
+    # Empty Trash
+    echo "Emptying Trash (files older than ${DAYS_TO_KEEP} days)..."
+    find ~/.Trash -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Error cleaning Trash."
+    find ~/.Trash -type d -empty -delete 2>/dev/null || echo "Error removing empty Trash directories."
+    
+    # Clean Safari caches
+    echo "Cleaning Safari caches..."
+    find ~/Library/Safari/LocalStorage -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Error cleaning Safari LocalStorage."
+    find ~/Library/Safari/WebKit/MediaCache -type f -exec rm {} \; -print 2>/dev/null || echo "Error cleaning Safari MediaCache."
+    
+    # Clean Spotify cache
+    echo "Cleaning Spotify cache..."
+    find ~/Library/Application\ Support/Spotify/PersistentCache/Storage -type f -mtime +${DAYS_TO_KEEP} -exec rm {} \; -print 2>/dev/null || echo "Error cleaning Spotify cache."
+    
+    # Clean Xcode derived data
+    echo "Cleaning Xcode derived data..."
+    rm -rf ~/Library/Developer/Xcode/DerivedData/* 2>/dev/null || echo "Error cleaning Xcode derived data."
+    rm -rf ~/Library/Developer/Xcode/Archives/* 2>/dev/null || echo "Error cleaning Xcode archives."
+    
+    # Node.js cache cleaning
+    if command -v npm >/dev/null 2>&1; then
+        echo "Cleaning npm cache..."
+        npm cache clean --force || echo "Error cleaning npm cache."
+    fi
+    
+    if command -v yarn >/dev/null 2>&1; then
+        echo "Cleaning yarn cache..."
+        yarn cache clean || echo "Error cleaning yarn cache."
+    fi
+    
+    # Docker cleanup
+    if command -v docker >/dev/null 2>&1; then
+        echo "Checking Docker context..."
+        if ! current_context=$(docker context show 2>/dev/null); then
+            echo "Unable to determine Docker context; assuming local and cleaning."
+            docker system prune -f || echo "Error cleaning Docker system."
+        else
+            if endpoint=$(docker context inspect "$current_context" --format '{{.Endpoints.docker.Host}}' 2>/dev/null); then
+                if [[ "$endpoint" == unix://* ]]; then
+                    echo "Cleaning unused Docker data..."
+                    docker system prune -f || echo "Error cleaning Docker system."
+                else
+                    echo "Docker is using a remote context ($endpoint), skipping cleanup."
+                fi
+            else
+                echo "Unable to inspect Docker context; skipping cleanup to avoid potential remote connection."
+            fi
+        fi
+    fi
+    
+    # System memory cleanup
+    echo "Purging system memory cache..."
+    sudo purge || echo "Error purging system memory."
+    
+    # Calculate final disk space
+    echo -e "\nAfter cleanup:"
+    local free_storage_final=$(df -k / | awk 'NR==2 {print $4}')
+    local total_storage_final=$(df -k / | awk 'NR==2 {print $2}')
+    local free_storage_final_gb=$(echo "scale=2; $free_storage_final / 1024 / 1024" | bc)
+    local total_storage_final_gb=$(echo "scale=2; $total_storage_final / 1024 / 1024" | bc)
+    
+    echo "Free storage: $free_storage_final_gb Gi / Total storage: $total_storage_final_gb Gi"
+    
+    # Calculate the difference in kilobytes
+    local free_storage_diff_kb=$((free_storage_final - free_storage))
+    
+    # If the difference is negative, set it to 0
+    if [ "$free_storage_diff_kb" -lt 0 ]; then
+        free_storage_diff_kb=0
+    fi
+    
+    # Determine appropriate unit for the difference
+    if [ "$free_storage_diff_kb" -ge $((1024 * 1024)) ]; then
+        # Convert difference to gigabytes if >= 1 Gi
+        local free_storage_diff_gb=$(echo "scale=2; $free_storage_diff_kb / 1024 / 1024" | bc)
+        echo "Space freed: $free_storage_diff_gb Gi"
+    elif [ "$free_storage_diff_kb" -ge 1024 ]; then
+        # Convert difference to megabytes if >= 1 Mi but < 1 Gi
+        local free_storage_diff_mb=$(echo "scale=2; $free_storage_diff_kb / 1024" | bc)
+        echo "Space freed: $free_storage_diff_mb Mi"
+    else
+        # Output difference in kilobytes if < 1 Mi
+        echo "Space freed: $free_storage_diff_kb Ki"
+    fi
+    
+    echo ""
+    echo "Selective cleanup complete!"
     
     echo ""
     read -p "$(echo -e ${WHITE}$(get_text "press_enter")${NC})"
-    
-    # Reset counters for next round
-    total_cleaned=0
-    total_items=0
-    cleaned_paths=()
-    skipped_paths=()
-    total_space_freed=0
 }
 
-# Special function for trash and downloads with auto cleanup
-clean_trash_downloads_auto() {
-    local paths=(
-        "$HOME/.Trash|User Trash"
-        "$HOME/Downloads|Downloads folder"
-        "/Volumes/*/.Trashes|External drive trash"
-        "$HOME/Library/Application Support/MobileSync/Backup|iOS device backups"
-        "$HOME/Desktop/Screenshot*|Desktop screenshots"
-        "$HOME/Movies/Screenshots|Movie screenshots"
-    )
-    auto_batch_clean "$(get_text "menu_5")" "${paths[@]}"
-}
-
-# Function to show auto cleanup summary
-show_auto_cleanup_summary() {
-    print_separator
-    echo -e "${BOLD}${SPARKLE_ICON} $(get_text "auto_cleanup_complete")${NC}"
-    print_separator
-    
-    # Convert total space freed to human readable
-    local total_freed_human=$(bytes_to_human "$total_space_freed")
-    
-    echo -e "${BOLD}${GREEN}$(get_text "total_space_freed"): ${total_freed_human}${NC}"
-    echo ""
-    
-    echo -e "${BOLD}${GREEN}$(get_text "cleaned_items") ($total_cleaned/$total_items):${NC}"
-    if [[ ${#cleaned_paths[@]} -gt 0 ]]; then
-        for item in "${cleaned_paths[@]}"; do
-            echo -e "  ${CHECK_ICON} $item"
-        done
-    else
-        echo -e "  ${INFO_ICON} $(get_text "no_items_cleaned")"
-    fi
-    
-    echo ""
-    if [[ ${#skipped_paths[@]} -gt 0 ]]; then
-        echo -e "${BOLD}${YELLOW}$(get_text "skipped_items"):${NC}"
-        for item in "${skipped_paths[@]}"; do
-            echo -e "  ${SKIP_ICON} $item"
-        done
-        echo ""
-    fi
-    
-    echo -e "${BOLD}${SPARKLE_ICON} $(get_text "all_processed")${NC}"
-}
 
 # Function to get installed applications
 get_installed_apps() {
@@ -1048,6 +821,7 @@ show_disk_space() {
     
     echo -e "${BLUE}${INFO_ICON} Free storage: ${free_gb}GB / Total: ${total_gb}GB${NC}"
 }
+
 
 # Main execution
 main() {
