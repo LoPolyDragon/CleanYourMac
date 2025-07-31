@@ -23,6 +23,10 @@ Since I am a middle school student, I may not be able to update this project in 
 - 🎯 **Multi-Selection Support** - Select multiple cleanup categories at once with checkbox-style interface
 - 📈 **Detailed Summary** - Shows cleanup results and space saved
 - ⚡ **Smart Detection** - Automatically detects installed applications and dev tools
+- 🦠 **Virus Scanner** - Comprehensive malware detection and removal
+- 📊 **Disk Analysis** - Advanced disk space analysis and large file detection
+- 🧹 **Enhanced Cache Cleanup** - Deep cleaning of browser caches, system caches, and temporary files
+- 🔒 **Security Features** - Startup item analysis and suspicious file detection
 
 ## 🧹 Features
 
@@ -46,6 +50,24 @@ Since I am a middle school student, I may not be able to update this project in 
   - User data (preferences, caches, saved states)
   - System data
   - Bundle identifier based files
+  - Enhanced cache cleanup with comprehensive file search
+  - Deep scan for app-related files by name patterns
+
+### Virus Scanner
+- Comprehensive malware detection using signature-based scanning
+- Suspicious process monitoring
+- Startup item analysis for potential threats
+- Network connection monitoring
+- Real-time threat assessment
+- Safe removal of detected malware
+
+### Disk Analysis
+- Detailed disk usage breakdown by directories
+- Large file detection (>100MB) with interactive deletion
+- Cache directory analysis and size reporting
+- Duplicate file detection based on file size
+- Interactive file management with size calculations
+- Comprehensive storage optimization recommendations
 
 ### Additional Features
 - Bilingual interface (English and Chinese)
@@ -53,6 +75,10 @@ Since I am a middle school student, I may not be able to update this project in 
 - Configurable retention period (default: 7 days)
 - Real-time disk space monitoring
 - Interactive color-coded terminal interface
+- Enhanced browser cache cleanup (Chrome, Firefox, Safari, Edge)
+- DNS cache flushing and system optimization
+- Font cache cleanup and Launch Services database rebuilding
+- Comprehensive system log and crash report cleanup
 
 ## 🚀 Usage
 
@@ -97,9 +123,11 @@ Select function:
 
 [1] Auto cleanup
 [2] Uninstall applications
-[3] Language / 语言
+[3] Virus scan
+[4] Disk analysis
+[5] Language / 语言
 
-Enter 1, 2 or 3:
+Enter 1-5:
 ```
 
 ### Example Usage
