@@ -19,28 +19,31 @@ Since I am a middle school student, I may not be able to update this project in 
 
 - 🎨 **Beautiful Interactive Interface** - Colorful terminal interface that's intuitive and user-friendly
 - 🛡️ **Safe & Reliable** - Always asks for confirmation before deleting anything
-- 📊 **Real-time Size Display** - Shows disk usage for each cleanup category
+- 📊 **Real-time Size Display** - Shows disk usage for each cleanup category with detailed before/after tracking
 - 🎯 **Multi-Selection Support** - Select multiple cleanup categories at once with checkbox-style interface
-- 📈 **Detailed Summary** - Shows cleanup results and space saved
+- 📈 **Detailed Summary** - Shows cleanup results and space saved with comprehensive reporting
 - ⚡ **Smart Detection** - Automatically detects installed applications and dev tools
 - 🦠 **Virus Scanner** - Comprehensive malware detection and removal
-- 📊 **Disk Analysis** - Advanced disk space analysis and large file detection
+- 📊 **Disk Analysis** - Advanced disk space analysis and large file detection with caching
 - 🧹 **Enhanced Cache Cleanup** - Deep cleaning of browser caches, system caches, and temporary files
 - 🔒 **Security Features** - Startup item analysis and suspicious file detection
+- 🧠 **Smart Cleanup Suggestions** - AI-powered recommendations for system optimization
+- 🔍 **Duplicate File Detection** - Find and identify duplicate files to save space
+- ⚡ **Performance Optimization** - System performance analysis and optimization tools
 
 ## 🧹 Features
 
 ### Auto Cleanup
-- System and user cache files (older than configurable days)
-- Application logs
-- Temporary files
-- Homebrew cleanup and optimization
-- Trash (files older than configurable days)
-- Browser caches (Safari)
-- Application caches (Spotify)
-- Development tool caches (Xcode, npm, yarn)
-- Docker system cleanup
-- System memory cache purging
+- System and user cache files (older than configurable days) with size tracking
+- Application logs with detailed before/after measurement
+- Temporary files with comprehensive cleanup reporting
+- Homebrew cleanup and optimization with cache analysis
+- Trash (files older than configurable days) with size calculation
+- Browser caches (Chrome, Firefox, Safari, Edge) with detailed tracking
+- Application caches (Spotify, Adobe, and more)
+- Development tool caches (Xcode, npm, yarn) with space reporting
+- Docker system cleanup with intelligent detection
+- System memory cache purging and performance optimization
 
 ### Application Uninstaller
 - Scan installed applications
@@ -69,16 +72,43 @@ Since I am a middle school student, I may not be able to update this project in 
 - Interactive file management with size calculations
 - Comprehensive storage optimization recommendations
 
+### Smart Cleanup Suggestions
+- Intelligent system analysis for optimization opportunities
+- Size-based recommendations for cache cleanup
+- Downloads folder analysis for old files
+- Trash size monitoring and cleanup suggestions
+- Browser cache analysis with space saving estimates
+- System logs analysis with cleanup recommendations
+- Total potential space savings calculation
+- Smart prioritization of cleanup tasks
+
+### Duplicate File Detection
+- MD5 hash-based duplicate detection in Documents, Downloads, and Desktop
+- Comprehensive file analysis for files larger than 1MB
+- Grouped display of duplicate files with sizes
+- Interactive file management with deletion recommendations
+- Space waste calculation and reporting
+- Safe duplicate identification with detailed file paths
+
+### Performance Optimization
+- Real-time system performance analysis (CPU, memory, disk usage)
+- Intelligent optimization recommendations based on system state
+- DNS cache flushing for network performance
+- Launch Services database rebuilding for faster app launches
+- Font cache cleanup for improved text rendering
+- System memory purging for better performance
+- Interactive optimization with user confirmation
+
 ### Additional Features
-- Bilingual interface (English and Chinese)
-- Dry run mode to preview cleanup
+- Bilingual interface (English and Chinese) with dynamic switching
+- Dry run mode to preview cleanup without making changes
 - Configurable retention period (default: 7 days)
-- Real-time disk space monitoring
-- Interactive color-coded terminal interface
-- Enhanced browser cache cleanup (Chrome, Firefox, Safari, Edge)
-- DNS cache flushing and system optimization
+- Real-time disk space monitoring with before/after comparison
+- Interactive color-coded terminal interface with progress tracking
+- Enhanced browser cache cleanup (Chrome, Firefox, Safari, Edge) with size tracking
+- DNS cache flushing and comprehensive system optimization
 - Font cache cleanup and Launch Services database rebuilding
-- Comprehensive system log and crash report cleanup
+- Comprehensive system log and crash report cleanup with reporting
 
 ## 🚀 Usage
 
@@ -114,20 +144,37 @@ The script supports both English and Chinese interfaces:
 # Interactive language switching available in menu option [8]
 ```
 
+### Global Installation
+
+For convenient access from anywhere, install CleanMac globally:
+
+```bash
+# Install globally
+./install.sh
+
+# Now use from anywhere
+cleanmac
+cleanmac --help
+cleanmac --auto
+```
+
 ### Interactive Menu
 
-After running the script, you'll see a simple menu with the following options:
+After running the script, you'll see a comprehensive menu with the following options:
 
 ```
 Select function:
 
-[1] Auto cleanup
-[2] Uninstall applications
-[3] Virus scan
-[4] Disk analysis
-[5] Language / 语言
+[1] 🧹 Auto cleanup
+[2] 📱 Uninstall applications  
+[3] 🛡️ Virus scan
+[4] 📊 Disk analysis
+[5] 🧠 Smart Cleanup Suggestions
+[6] 🔍 Duplicate File Detection
+[7] ⚡ System Performance Optimization
+[8] 🌐 Language / 语言
 
-Enter 1-5:
+Enter 1-8:
 ```
 
 ### Example Usage
@@ -178,12 +225,15 @@ Start auto cleanup? [y/N]: y
 
 After using CleanYourMac, you may experience:
 
-- ⚡ Faster system startup
-- 💾 Significant disk space recovery (typically 1-10GB)
-- 🔄 Improved application responsiveness
+- ⚡ Faster system startup with Launch Services optimization
+- 💾 Significant disk space recovery (typically 1-20GB+ with comprehensive cleaning)
+- 🔄 Improved application responsiveness through cache optimization
 - 🚀 Reduced memory usage after purging system memory cache
-- 🔧 Faster app launches
-- 🧹 More organized system with less clutter
+- 🔧 Faster app launches with duplicate file removal
+- 🧹 More organized system with intelligent cleanup suggestions
+- 🎯 Better network performance with DNS cache optimization
+- 📈 Enhanced system monitoring with detailed space tracking
+- 🔍 Reduced storage waste through duplicate file detection
 
 ## 🔍 What Gets Cleaned
 
